@@ -1,3 +1,6 @@
+import math
+
+
 def get_all_strings(length, alphabet_size):
     """ Returns all possible strings of a given length """
 
@@ -14,10 +17,6 @@ def get_all_strings(length, alphabet_size):
     return sub_length_results[length]
 
 
-def store(R_new, S_new, C, D, R, S, storage):
-    storage[C][D][R][S] = (R_new, S_new)
-
-
 def algorithm_y(m, alphabet_size, step_size_bound, delete_cost_function, insert_cost_function, replace_cost_function):
     """ Preprocesses data by creating helper submatrices """
 
@@ -28,6 +27,9 @@ def algorithm_y(m, alphabet_size, step_size_bound, delete_cost_function, insert_
         step_vectors_mapped.append([letter - step_size_bound for letter in step_vector])
 
     storage = []
+
+    def store(R_new, S_new, C, D, R, S, storage):
+        storage[C][D][R][S] = (R_new, S_new)
 
     for C in strings:
         for D in strings:
@@ -64,20 +66,8 @@ def algorithm_y(m, alphabet_size, step_size_bound, delete_cost_function, insert_
     return storage
 
 
-def fetch(R, S, C, D, storage):
-    return storage[C][D][R][S]
-
-
-def get_step_size_bound():
-    pass
-
-
-def algorithm_z(m, A, B, alphabet_size, delete_cost_function, insert_cost_function, replace_cost_function):
-    """ Calculates the edit distance between A and B """
-
-    step_size_bound = get_step_size_bound()
-    storage = algorithm_y(m, alphabet_size, step_size_bound,
-                          delete_cost_function, insert_cost_function, replace_cost_function)
+def algorithm_z(m, A, B, alphabet_size, delete_cost_function, insert_cost_function, replace_cost_function, storage):
+    """ Calculates the edit distance between A and B using preprocessed submatrices of size mxm """
 
     P = []
     for i in range(1, len(A)/m + 1):
@@ -86,6 +76,9 @@ def algorithm_z(m, A, B, alphabet_size, delete_cost_function, insert_cost_functi
     Q = []
     for j in range(1, len(B)/m + 1):
         Q[0][j] = [insert_cost_function(B[letter_idx]) for letter_idx in range((j-1)*m+1, j*m+1)]
+
+    def fetch(R, S, C, D, storage):
+        return storage[C][D][R][S]
 
     for i in range(1, len(A)/m + 1):
         for j in range(1, len(B)/m + 1):
@@ -98,5 +91,27 @@ def algorithm_z(m, A, B, alphabet_size, delete_cost_function, insert_cost_functi
 
     for j in range(1, len(B)/m + 1):
         cost += sum(Q[len(A)/m][j])
+
+    return cost
+
+
+def edit_distance(A, B, alphabet_size, delete_cost_function, insert_cost_function, replace_cost_function):
+    """ Calculates the edit distance between A and B """
+
+    def get_parameter(A):
+        return int(math.log2(len(A)))
+
+    def get_step_size_bound():
+        I = max([insert_cost_function(letter_idx) for letter_idx in range(0,alphabet_size)])
+        D = max([delete_cost_function(letter_idx) for letter_idx in range(0,alphabet_size)])
+        return max(I,D)
+
+    m = get_parameter(A)
+    step_size_bound = get_step_size_bound()
+
+    storage = algorithm_y(m, alphabet_size, step_size_bound,
+                          delete_cost_function, insert_cost_function, replace_cost_function)
+
+    cost = algorithm_z(m, A, B, alphabet_size, delete_cost_function, insert_cost_function, replace_cost_function, storage)
 
     return cost
