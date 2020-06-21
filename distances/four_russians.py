@@ -62,3 +62,41 @@ def algorithm_y(m, alphabet_size, step_size_bound, delete_cost_function, insert_
                     store(R_new, S_new, R, S, C, D, storage)
 
     return storage
+
+
+def fetch(R, S, C, D, storage):
+    return storage[C][D][R][S]
+
+
+def get_step_size_bound():
+    pass
+
+
+def algorithm_z(m, A, B, alphabet_size, delete_cost_function, insert_cost_function, replace_cost_function):
+    """ Calculates the edit distance between A and B """
+
+    step_size_bound = get_step_size_bound()
+    storage = algorithm_y(m, alphabet_size, step_size_bound,
+                          delete_cost_function, insert_cost_function, replace_cost_function)
+
+    P = []
+    for i in range(1, len(A)/m + 1):
+        P[i][0] = [delete_cost_function(A[letter_idx]) for letter_idx in range((i-1)*m+1, i*m+1)]
+
+    Q = []
+    for j in range(1, len(B)/m + 1):
+        Q[0][j] = [insert_cost_function(B[letter_idx]) for letter_idx in range((j-1)*m+1, j*m+1)]
+
+    for i in range(1, len(A)/m + 1):
+        for j in range(1, len(B)/m + 1):
+            (P[i][j],Q[i][j]) = fetch(P[i][j-1], Q[i-1][j], A[((i-1)*m+1):(i*m)], B[((j-1)*m+1):(j*m)], storage)
+
+    cost = 0
+
+    for i in range(1, len(A)/m + 1):
+        cost += sum(P[i][0])
+
+    for j in range(1, len(B)/m + 1):
+        cost += sum(Q[len(A)/m][j])
+
+    return cost
