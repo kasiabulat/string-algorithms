@@ -89,14 +89,16 @@ def algorithm_y(m, A, step_size_bound, delete_cost_function, insert_cost_functio
 def algorithm_z(m, text_1, text_2, delete_cost_function, insert_cost_function, storage):
     """ Calculates the edit distance between A and B using preprocessed submatrices of size mxm """
 
-    P = []
     text_1_parts = int(len(text_1) / m) + 1
     text_2_parts = int(len(text_2) / m) + 1
+
+    P = [[[] for _ in range(text_2_parts)] for _ in range(text_1_parts)]
 
     for i in range(1, text_1_parts):
         P[i][0] = [delete_cost_function(text_1[letter_idx]) for letter_idx in range((i - 1) * m + 1, i * m + 1)]
 
-    Q = []
+    Q = [[[] for _ in range(text_2_parts)] for _ in range(text_1_parts)]
+
     for j in range(1, text_2_parts):
         Q[0][j] = [insert_cost_function(text_2[letter_idx]) for letter_idx in range((j - 1) * m + 1, j * m + 1)]
 
