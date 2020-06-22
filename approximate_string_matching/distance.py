@@ -42,22 +42,23 @@ def indel_distance_row(text_1, text_2, n_1, n_2):
 def indel_distance(text_1, text_2, n_1, n_2):
   return indel_distance_row(text_1, text_2, n_1, n_2)[-1]
 
-def edit_distance_four_russians(text_1, text_2, alphabet_size, delete_cost_function, insert_cost_function, replace_cost_function):
+def edit_distance_four_russians(text_1, text_2, delete_cost_function, insert_cost_function, substitute_cost_function):
     """ Algorithm proposed by William J. Masek and Michael S. Paterson, using the method of "Four Russians """
+
+    A = set(list(text_1[1:] + text_2[1:]))
 
     def get_parameter(A):
       return int(math.log2(len(A)))
 
     def get_step_size_bound():
-      I = max([insert_cost_function(letter_idx) for letter_idx in range(0, alphabet_size)])
-      D = max([delete_cost_function(letter_idx) for letter_idx in range(0, alphabet_size)])
+      I = max([insert_cost_function(letter_idx) for letter_idx in A])
+      D = max([delete_cost_function(letter_idx) for letter_idx in A])
       return max(I, D)
 
     m = get_parameter(text_1)
     step_size_bound = get_step_size_bound()
 
-    storage = algorithm_y(m, alphabet_size, step_size_bound,
-                          delete_cost_function, insert_cost_function, replace_cost_function)
+    storage = algorithm_y(m, A, step_size_bound, delete_cost_function, insert_cost_function, substitute_cost_function)
 
     cost = algorithm_z(m, text_1, text_2, delete_cost_function, insert_cost_function, storage)
 
