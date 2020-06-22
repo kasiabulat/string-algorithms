@@ -21,17 +21,21 @@ def get_all_strings(m, A, dumb_letter):
 def algorithm_y(m, A, step_size_bound, delete_cost_function, insert_cost_function, substitute_cost_function):
     """ Preprocesses data by creating helper submatrices """
 
+    A.add('#')
     strings = get_all_strings(m, A, '#')
 
     step_vectors_alphabet = [[cost] for cost in range(-step_size_bound,step_size_bound+1)]
     step_vectors = get_all_strings(m, step_vectors_alphabet, [0])
 
-    # print("strings: " + str(strings))
-    # print("step_vectors: " + str(step_vectors))
+    print("strings: " + str(strings))
+    print("step_vectors: " + str(step_vectors))
 
     storage = {}
 
     def store(R_new, S_new, C, D, R, S, storage):
+        C = C[1:]
+        D = D[1:]
+
         # print("C: " + str(C))
         # print("D: " + str(D))
         # print("R: " + str(R))
@@ -39,8 +43,8 @@ def algorithm_y(m, A, step_size_bound, delete_cost_function, insert_cost_functio
         # print("R_new: " + str(S))
         # print("S_new: " + str(S))
 
-        R = tuple(R)
-        S = tuple(S)
+        R = tuple(R[1:])
+        S = tuple(S[1:])
 
         if C not in storage: storage[C] = {}
         if D not in storage[C]: storage[C][D] = {}
@@ -103,12 +107,12 @@ def algorithm_z(m, text_1, text_2, delete_cost_function, insert_cost_function, s
         Q[0][j] = [insert_cost_function(text_2[letter_idx]) for letter_idx in range((j - 1) * m + 1, j * m + 1)]
 
     def fetch(R, S, C, D, storage):
-        return storage[C][D][R][S]
+        return storage[C][D][tuple(R)][tuple(S)]
 
     for i in range(1, text_1_parts):
         for j in range(1, text_2_parts):
-            (P[i][j], Q[i][j]) = fetch(P[i][j - 1], Q[i - 1][j], text_1[((i - 1) * m + 1):(i * m)],
-                                       text_2[((j - 1) * m + 1):(j * m)], storage)
+            (P[i][j], Q[i][j]) = fetch(P[i][j - 1], Q[i - 1][j], text_1[((i - 1) * m + 1):(i * m+1)],
+                                       text_2[((j - 1) * m + 1):(j * m+1)], storage)
 
     cost = 0
 
