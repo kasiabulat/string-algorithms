@@ -54,7 +54,7 @@ def hirschberg(text_1, text_2, n_1, n_2):
       n_1 - split_1, n_2 - split_2)
   return out_previous[0] + out_next[0], out_previous[1] + out_next[1]
 
-def four_russians(text_1, text_2):
+def four_russians(text_1, text_2, n1, n2):
   """ Calculates longest common subsequence of strings A and B as a special case of four russians edit distance algorithm """
 
   def compare_cost_function(a, b):
@@ -63,4 +63,8 @@ def four_russians(text_1, text_2):
   def constant_one_cost_function(a):
     return 1
 
-  return edit_distance_four_russians(text_1, text_2, constant_one_cost_function, constant_one_cost_function, compare_cost_function)
+  lcs = edit_distance_four_russians(text_1, text_2, constant_one_cost_function, constant_one_cost_function, compare_cost_function)
+  print("lcs result:")
+  print(lcs)
+
+  return lcs

@@ -8,6 +8,7 @@ from generator import rand
 LCS_ALGORITHMS = [
     lcs.needleman_wunsch,
     lcs.hirschberg,
+    lcs.four_russians
 ]
 
 class TestStringDistance(unittest.TestCase):
