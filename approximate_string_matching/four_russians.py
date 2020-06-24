@@ -90,6 +90,42 @@ def algorithm_y(m, A, step_size_bound, delete_cost_function, insert_cost_functio
     return storage
 
 
+def restore_lcs(R, S, C, D, substitute_cost_function, delete_cost_function, insert_cost_function, m):
+    # Restore submatrix
+
+    M = [[0] * (m + 1) for _ in range(m + 1)]
+
+    for i in range(1, m + 1):
+        M[i][0] = R[i]
+        M[0][i] = S[i]
+
+    for i in range(1, m + 1):
+        for j in range(1, m + 1):
+            M[i][j] = min(
+                substitute_cost_function(C[i], D[j]) + M[i-1][j-1],
+                delete_cost_function(C[i]) + M[i-1][j],
+                insert_cost_function(D[j]) + M[i][j-1]
+            )
+
+    i = m
+    j = m
+
+    lcs = ""
+
+    while i != 0 or j != 0:
+        if M[i][j] == substitute_cost_function(C[i], D[j]) + M[i-1][j-1]:
+            if C[i] == D[j]:
+                lcs += C[i]
+            i = i-1
+            j = j-1
+        elif M[i][j] == delete_cost_function(C[i]) + M[i-1][j]:
+            i = i - 1
+        elif M[i][j] == insert_cost_function(D[j]) + M[i][j-1]:
+            j = j - 1
+
+    return lcs, i, j
+
+
 def algorithm_z(m, text_1, text_2, delete_cost_function, insert_cost_function, storage):
     """ Calculates the edit distance between A and B using preprocessed submatrices of size mxm """
 
@@ -113,6 +149,8 @@ def algorithm_z(m, text_1, text_2, delete_cost_function, insert_cost_function, s
         for j in range(1, text_2_parts):
             (P[i][j], Q[i][j]) = fetch(P[i][j - 1], Q[i - 1][j], text_1[((i - 1) * m + 1):(i * m+1)],
                                        text_2[((j - 1) * m + 1):(j * m+1)], storage)
+
+    # P, Q - matrices with step vectors
 
     cost = 0
 
