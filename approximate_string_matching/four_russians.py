@@ -20,6 +20,21 @@ class four_russians:
         result = [dumb_letter + word for word in sub_length_results[m]]
         return result
 
+    def store(self, R_new, S_new, C, D, R, S, storage):
+        C = C[1:]
+        D = D[1:]
+
+        R = tuple(R[1:])
+        S = tuple(S[1:])
+
+        if C not in storage: storage[C] = {}
+        if D not in storage[C]: storage[C][D] = {}
+        if R not in storage[C][D]: storage[C][D][R] = {}
+
+        storage[C][D][R][S] = (R_new, S_new)
+
+    def fetch(self, C, D, R, S, storage):
+        return storage[C][D][tuple(R)][tuple(S)]
 
     def algorithm_y(self, m, A, step_size_bound):
         """ Preprocesses data by creating helper submatrices """
@@ -34,19 +49,6 @@ class four_russians:
         print("step_vectors: " + str(step_vectors))
 
         storage = {}
-
-        def store(R_new, S_new, C, D, R, S, storage):
-            C = C[1:]
-            D = D[1:]
-
-            R = tuple(R[1:])
-            S = tuple(S[1:])
-
-            if C not in storage: storage[C] = {}
-            if D not in storage[C]: storage[C][D] = {}
-            if R not in storage[C][D]: storage[C][D][R] = {}
-
-            storage[C][D][R][S] = (R_new, S_new)
 
         for C in strings:
             for D in strings:
@@ -78,20 +80,15 @@ class four_russians:
                             R_new.append(T[i][m])
                             S_new.append(U[m][i])
 
-                        store(R_new, S_new, C, D, R, S, storage)
+                        self.store(R_new, S_new, C, D, R, S, storage)
 
         return storage
 
-
-    def restore_lcs_part(self, R, S, C, D, m, i1, j1):
-        # Restore submatrix
-
+    def restore_matrix(self, C, D, R, S, m):
         M = [[0] * (m + 1) for _ in range(m + 1)]
-
         for i in range(1, m + 1):
             M[i][0] = R[i]
             M[0][i] = S[i]
-
         for i in range(1, m + 1):
             for j in range(1, m + 1):
                 M[i][j] = min(
@@ -99,6 +96,10 @@ class four_russians:
                     self.delete_cost_function(C[i]) + M[i - 1][j],
                     self.insert_cost_function(D[j]) + M[i][j - 1]
                 )
+        return M
+
+    def restore_lcs_part(self, C, D, R, S, m, i1, j1):
+        M = self.restore_matrix(C, D, R, S, m)
 
         i = i1
         j = j1
@@ -118,10 +119,68 @@ class four_russians:
 
         return lcs, i, j
 
+    def restore_lcs(self, text_1, text_2, P, Q, m, storage):
+        lcs = ""
 
-    def restore_lcs(self, text_1, text_2):
-        pass
+        # indices on the matrix of submatrices
+        I = m
+        J = m
 
+        # indices inside of the submatrices
+        i = m
+        j = m
+
+        while I != 0 and J != 0:
+            C = self.get_kth_substring(I, m, text_1)
+            D = self.get_kth_substring(J, m, text_2)
+
+            lcs_part, i, j = self.restore_lcs_part(C, D, P[I][J], Q[I][J], m, i, j)
+
+            if i == 0 and j == 0:
+                prev_C = self.get_kth_substring(I - 1, m, text_1)
+                prev_D = self.get_kth_substring(J - 1, m, text_2)
+
+                upper_left_matrix = self.restore_matrix(C, prev_D, P[I][J - 1], Q[I][J - 1], m)
+
+                left_matrix_upper_initial = [upper_left_matrix[k][m] for k in range(0,m+1)]
+                left_matrix = self.restore_matrix(prev_C, D, left_matrix_upper_initial, Q[I - 1][J], m)
+
+                upper_matrix_left_initial = [upper_left_matrix[m][k] for k in range(0,m+1)]
+                upper_matrix = self.fetch(C, prev_D, P[I][J - 1], upper_matrix_left_initial, m)
+
+                substitute_cost = self.substitute_cost_function(C[i], D[j]) + upper_left_matrix[m][m] # TODO: check m +- 1
+                delete_cost = self.delete_cost_function(C[i], D[j]) + left_matrix[m][0]
+                insert_cost = self.insert_cost_function(C[i], D[j]) + upper_matrix[0][m]
+
+                minimum = min(substitute_cost, delete_cost, insert_cost)
+
+                if minimum == substitute_cost:
+                    if C[i] == D[j]:
+                        lcs += C[i] # TODO: check if necessary
+                    I = I - 1
+                    J = J - 1
+                    i = m
+                    j = m
+                elif minimum == delete_cost:
+                    I = I - 1
+                    i = m
+                elif minimum == insert_cost:
+                    J = J - 1
+                    j = m
+            elif i == 0:
+                I = I-1
+                i = m
+            elif j == 0:
+                J = J-1
+                j = m
+
+            lcs += lcs_part
+
+        # reverse result:
+        return lcs[::-1]
+
+    def get_kth_substring(self, I, m, text_1):
+        return text_1[((I - 1) * m + 1):(I * m + 1)]
 
     def algorithm_z(self, m, text_1, text_2, storage):
         """ Calculates the edit distance between A and B using preprocessed submatrices of size mxm """
@@ -139,13 +198,11 @@ class four_russians:
         for j in range(1, text_2_parts):
             Q[0][j] = [self.insert_cost_function(text_2[letter_idx]) for letter_idx in range((j - 1) * m + 1, j * m + 1)]
 
-        def fetch(R, S, C, D, storage):
-            return storage[C][D][tuple(R)][tuple(S)]
 
         for i in range(1, text_1_parts):
             for j in range(1, text_2_parts):
-                (P[i][j], Q[i][j]) = fetch(P[i][j - 1], Q[i - 1][j], text_1[((i - 1) * m + 1):(i * m+1)],
-                                           text_2[((j - 1) * m + 1):(j * m+1)], storage)
+                (P[i][j], Q[i][j]) = self.fetch(self.get_kth_substring(i, m, text_1),
+                                                self.get_kth_substring(j, m, text_2), P[i][j - 1], Q[i - 1][j], storage)
 
         # P, Q - matrices with step vectors
 
