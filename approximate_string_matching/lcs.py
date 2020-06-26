@@ -1,8 +1,7 @@
 from collections import namedtuple
 
 from approximate_string_matching import distance
-from approximate_string_matching.distance import edit_distance_four_russians
-
+from approximate_string_matching.four_russians_helpers import four_russians_helpers
 
 def needleman_wunsch(text_1, text_2, n_1, n_2):
   Data = namedtuple('Data', ['distance', 'previous', 'letter'])
@@ -63,8 +62,12 @@ def four_russians(text_1, text_2, n1, n2):
   def constant_one_cost_function(a):
     return 1
 
-  lcs = edit_distance_four_russians(text_1, text_2, constant_one_cost_function, constant_one_cost_function, compare_cost_function)
-  print("lcs result:")
-  print(lcs)
+  fr = four_russians_helpers(constant_one_cost_function, constant_one_cost_function, compare_cost_function)
+  m, A, step_size_bound, text_1, text_2 = fr.prepare_parameters(text_1, text_2, constant_one_cost_function, constant_one_cost_function)
+  storage = fr.algorithm_y(m, A, step_size_bound)
+  lcs, length = fr.get_lcs(m, text_1, text_2, storage)
 
-  return lcs
+  print("lcs result:")
+  print(lcs, length)
+
+  return lcs, length

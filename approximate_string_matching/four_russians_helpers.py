@@ -1,8 +1,33 @@
-class four_russians:
+import math
+
+
+class four_russians_helpers:
     def __init__(self, delete_cost_function, insert_cost_function, substitute_cost_function):
         self.delete_cost_function = delete_cost_function
         self.insert_cost_function= insert_cost_function
         self.substitute_cost_function = substitute_cost_function
+
+    def prepare_parameters(self, text_1, text_2, delete_cost_function, insert_cost_function):
+        A = set(list(text_1[1:] + text_2[1:]))
+
+        def get_parameter(A):
+            return int(math.log2(len(A)))
+
+        def get_step_size_bound():
+            I = max([insert_cost_function(letter_idx) for letter_idx in A])
+            D = max([delete_cost_function(letter_idx) for letter_idx in A])
+            return max(I, D)
+
+        m = get_parameter(text_1)
+        step_size_bound = get_step_size_bound()
+
+        text_1_mod = (len(text_1) - 1) % m
+        if text_1_mod != 0: text_1 += '#' * (m - (text_1_mod))
+
+        text_2_mod = (len(text_2) - 1) % m
+        if text_2_mod != 0: text_2 += '#' * (m - (text_2_mod))
+
+        return m, A, step_size_bound, text_1, text_2
 
     def get_all_strings(self, m, A, dumb_letter):
         """ Returns all possible strings of a given length """
@@ -45,9 +70,6 @@ class four_russians:
         step_vectors_alphabet = [[cost] for cost in range(-step_size_bound,step_size_bound+1)]
         step_vectors = self.get_all_strings(m, step_vectors_alphabet, [0])
 
-        print("strings: " + str(strings))
-        print("step_vectors: " + str(step_vectors))
-
         storage = {}
 
         for C in strings:
@@ -84,6 +106,34 @@ class four_russians:
 
         return storage
 
+    def get_text_parts(self, m, text_1):
+        return int(len(text_1) / m) + 1
+
+    def algorithm_z(self, m, storage, text_1, text_2):
+        """ Returns step vectors needed to calculate the edit distance between A and B using preprocessed submatrices of size mxm """
+
+        text_1_parts = self.get_text_parts(m, text_1)
+        text_2_parts = self.get_text_parts(m, text_2)
+
+        P = [[[] for _ in range(text_2_parts)] for _ in range(text_1_parts)]
+
+        for i in range(1, text_1_parts):
+            P[i][0] = [self.delete_cost_function(text_1[letter_idx]) for letter_idx in
+                       range((i - 1) * m + 1, i * m + 1)]
+
+        Q = [[[] for _ in range(text_2_parts)] for _ in range(text_1_parts)]
+
+        for j in range(1, text_2_parts):
+            Q[0][j] = [self.insert_cost_function(text_2[letter_idx]) for letter_idx in
+                       range((j - 1) * m + 1, j * m + 1)]
+
+        for i in range(1, text_1_parts):
+            for j in range(1, text_2_parts):
+                (P[i][j], Q[i][j]) = self.fetch(self.get_kth_substring(i, m, text_1),
+                                                self.get_kth_substring(j, m, text_2), P[i][j - 1], Q[i - 1][j], storage)
+
+        return P, Q
+
     def restore_matrix(self, C, D, R, S, m):
         M = [[0] * (m + 1) for _ in range(m + 1)]
         for i in range(1, m + 1):
@@ -119,7 +169,10 @@ class four_russians:
 
         return lcs, i, j
 
-    def restore_lcs(self, text_1, text_2, P, Q, m, storage):
+    def get_kth_substring(self, I, m, text_1):
+        return text_1[((I - 1) * m + 1):(I * m + 1)]
+
+    def restore_lcs(self, text_1, text_2, P, Q, m):
         lcs = ""
 
         # indices on the matrix of submatrices
@@ -179,39 +232,20 @@ class four_russians:
         # reverse result:
         return lcs[::-1]
 
-    def get_kth_substring(self, I, m, text_1):
-        return text_1[((I - 1) * m + 1):(I * m + 1)]
-
-    def algorithm_z(self, m, text_1, text_2, storage):
-        """ Calculates the edit distance between A and B using preprocessed submatrices of size mxm """
-
-        text_1_parts = int(len(text_1) / m) + 1
-        text_2_parts = int(len(text_2) / m) + 1
-
-        P = [[[] for _ in range(text_2_parts)] for _ in range(text_1_parts)]
-
-        for i in range(1, text_1_parts):
-            P[i][0] = [self.delete_cost_function(text_1[letter_idx]) for letter_idx in range((i - 1) * m + 1, i * m + 1)]
-
-        Q = [[[] for _ in range(text_2_parts)] for _ in range(text_1_parts)]
-
-        for j in range(1, text_2_parts):
-            Q[0][j] = [self.insert_cost_function(text_2[letter_idx]) for letter_idx in range((j - 1) * m + 1, j * m + 1)]
-
-
-        for i in range(1, text_1_parts):
-            for j in range(1, text_2_parts):
-                (P[i][j], Q[i][j]) = self.fetch(self.get_kth_substring(i, m, text_1),
-                                                self.get_kth_substring(j, m, text_2), P[i][j - 1], Q[i - 1][j], storage)
-
-        # P, Q - matrices with step vectors
+    def get_edit_distance(self, m, text_1, text_2, storage):
+        P, Q = self.algorithm_z(m, storage, text_1, text_2)
 
         cost = 0
 
-        for i in range(1, text_1_parts):
+        for i in range(1, self.get_text_parts(m, text_1)):
             cost += sum(P[i][0])
 
-        for j in range(1, text_2_parts):
+        for j in range(1, self.get_text_parts(m, text_2)):
             cost += sum(Q[int(len(text_1) / m)][j])
 
         return cost
+
+    def get_lcs(self, m, text_1, text_2, storage):
+        P, Q = self.algorithm_z(m, storage, text_1, text_2)
+        lcs = self.restore_lcs(text_1, text_2, P, Q, m)
+        return lcs, len(lcs)
