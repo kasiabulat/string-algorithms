@@ -1,7 +1,9 @@
 from collections import namedtuple
 
 from approximate_string_matching import distance
-from approximate_string_matching.four_russians_helpers import four_russians_helpers
+from approximate_string_matching.four_russians_helpers import four_russians_helpers, lcs_delete_cost_function, \
+  lcs_insert_cost_function, lcs_substitute_cost_function
+
 
 def needleman_wunsch(text_1, text_2, n_1, n_2):
   Data = namedtuple('Data', ['distance', 'previous', 'letter'])
@@ -53,19 +55,13 @@ def hirschberg(text_1, text_2, n_1, n_2):
       n_1 - split_1, n_2 - split_2)
   return out_previous[0] + out_next[0], out_previous[1] + out_next[1]
 
+
 def four_russians(text_1, text_2, n1, n2):
   """ Calculates longest common subsequence of strings A and B as a special case of four russians edit distance algorithm """
 
-  delete_cost_function = lambda a: 1
-  insert_cost_function = lambda b: 1
-  substitute_cost_function = lambda a, b: 0 if (a == b) else 2
-
-  fr = four_russians_helpers(delete_cost_function, insert_cost_function, substitute_cost_function)
+  fr = four_russians_helpers(lcs_delete_cost_function, lcs_insert_cost_function, lcs_substitute_cost_function)
   m, A, step_size_bound, text_1, text_2 = fr.prepare_parameters(text_1, text_2)
   storage = fr.algorithm_y(m, A, step_size_bound)
   lcs, length = fr.get_lcs(m, text_1, text_2, storage)
-
-  print("lcs result:")
-  print(lcs, length)
 
   return lcs, length

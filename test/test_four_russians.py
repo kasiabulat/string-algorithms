@@ -1,11 +1,8 @@
 import unittest
 from copy import deepcopy
 
-from approximate_string_matching.four_russians_helpers import four_russians_helpers
-
-lcs_delete_cost_function = lambda a: 1
-lcs_insert_cost_function = lambda b: 1
-lcs_substitute_cost_function = lambda a, b: 0 if (a == b) else 2
+from approximate_string_matching.four_russians_helpers import four_russians_helpers, lcs_delete_cost_function, \
+    lcs_insert_cost_function, lcs_substitute_cost_function
 
 
 def substitute_cost_function2(c, d):
@@ -182,22 +179,41 @@ class TestRestoreLcsPart(unittest.TestCase):
         self.assertEqual(i, 0)
         self.assertEqual(j, 3)
 
+
 class TestRestoreLcs(unittest.TestCase):
-    def test_restore_lcs(self):
-        text_1 = "#baabab"
-        text_2 = "#ababaa"
+    def test_restore_lcs_1(self):
+        self.check_lcs("#baabab", "#ababaa", "abab")
+
+    def test_restore_lcs_2(self):
+        self.check_lcs("#aab", "#baa", "aa")
+
+    def test_restore_lcs_3(self):
+        self.check_lcs("#", "#", "")
+
+    def test_restore_lcs_4(self):
+        self.check_lcs("#aaa", "#", "")
+
+    def test_restore_lcs_5(self):
+        self.check_lcs("#aaa", "#aaa", "aaa")
+
+    def test_restore_lcs_6(self):
+        self.check_lcs("#aaab", "#baaa", "aaa")
+
+    def test_restore_lcs_7(self):
+        self.check_lcs("#baaba", "#babaa", "baaa")
+
+    def test_restore_lcs_8(self):
+        self.check_lcs("#baaa", "#ababaa", "baaa")
+
+    def check_lcs(self, text_1, text_2, expected_lcs):
+        expected_length = len(expected_lcs)
         fr = four_russians_helpers(lcs_delete_cost_function, lcs_insert_cost_function, lcs_substitute_cost_function)
         m, A, step_size_bound, text_1, text_2 = fr.prepare_parameters(text_1, text_2)
         storage = fr.algorithm_y(m, A, step_size_bound)
         P, Q = fr.algorithm_z(m, storage, text_1, text_2)
 
-        whole_matrix, diff_between_rows, diff_between_columns = get_full_matrices(fr, text_1, text_2,
-                                                                                  lcs_delete_cost_function,
-                                                                                  lcs_insert_cost_function)
-
-        fr.print_2dim_array(whole_matrix)
-
-
         lcs = fr.restore_lcs(text_1, text_2, P, Q, m)
-        self.assertEqual(len(lcs), 4)
-        self.assertEqual(lcs, "baba")
+        self.assertEqual(len(lcs), expected_length,
+                         msg="Expected lcs of length {0}, actual lcs of length {1}. Actual result: {2}, result expected: {3}"
+                         .format(expected_length, len(lcs), lcs, expected_lcs))
+        self.assertEqual(lcs, expected_lcs)

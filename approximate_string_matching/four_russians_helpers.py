@@ -1,5 +1,8 @@
 import math
 
+lcs_delete_cost_function = lambda a: 1
+lcs_insert_cost_function = lambda b: 1
+lcs_substitute_cost_function = lambda a, b: 0 if (a == b) else 2
 
 class four_russians_helpers:
     def __init__(self, delete_cost_function, insert_cost_function, substitute_cost_function):
@@ -11,9 +14,11 @@ class four_russians_helpers:
         A = sorted(list(set(list(text_1[1:] + text_2[1:]))))
 
         def get_parameter(text_1):
+            if(len(text_1)==1): return 1
             return int(math.log2(len(text_1) - 1))
 
         def get_step_size_bound():
+            if(len(A) == 0): return (0,0)
             I = max([self.insert_cost_function(letter_idx) for letter_idx in A])
             D = max([self.delete_cost_function(letter_idx) for letter_idx in A])
             return max(I, D)
@@ -65,6 +70,8 @@ class four_russians_helpers:
     def algorithm_y(self, m, A, step_size_bound):
         """ Preprocesses data by creating helper submatrices """
 
+        if(len(A)==0): return []
+
         A = ['#'] + A
         strings = self.get_all_strings(m, A, '#')
 
@@ -72,6 +79,7 @@ class four_russians_helpers:
         step_vectors = self.get_all_strings(m, step_vectors_alphabet, [0])
 
         storage = {}
+
 
         for C in strings:
             for D in strings:
@@ -108,28 +116,28 @@ class four_russians_helpers:
         return storage
 
     def get_text_parts(self, m, text_1):
-        return int(len(text_1) / m) + 1
+        return int((len(text_1)-1) / m)
 
     def algorithm_z(self, m, storage, text_1, text_2):
         """ Returns step vectors needed to calculate the edit distance between A and B using preprocessed submatrices of size mxm """
 
-        text_1_parts = self.get_text_parts(m, text_1)
-        text_2_parts = self.get_text_parts(m, text_2)
+        text_1_parts_bound = self.get_text_parts(m, text_1) + 1
+        text_2_parts_bound = self.get_text_parts(m, text_2) + 1
 
-        P = [[[] for _ in range(text_2_parts)] for _ in range(text_1_parts)]
+        P = [[[] for _ in range(text_2_parts_bound)] for _ in range(text_1_parts_bound)]
 
-        for i in range(1, text_1_parts):
+        for i in range(1, text_1_parts_bound):
             P[i][0] = [self.delete_cost_function(text_1[letter_idx]) for letter_idx in
                        range((i - 1) * m + 1, i * m + 1)]
 
-        Q = [[[] for _ in range(text_2_parts)] for _ in range(text_1_parts)]
+        Q = [[[] for _ in range(text_2_parts_bound)] for _ in range(text_1_parts_bound)]
 
-        for j in range(1, text_2_parts):
+        for j in range(1, text_2_parts_bound):
             Q[0][j] = [self.insert_cost_function(text_2[letter_idx]) for letter_idx in
                        range((j - 1) * m + 1, j * m + 1)]
 
-        for i in range(1, text_1_parts):
-            for j in range(1, text_2_parts):
+        for i in range(1, text_1_parts_bound):
+            for j in range(1, text_2_parts_bound):
                 (P[i][j], Q[i][j]) = self.fetch(self.get_kth_substring(i, m, text_1),
                                                 self.get_kth_substring(j, m, text_2), P[i][j - 1], Q[i - 1][j], storage)
 
@@ -152,26 +160,14 @@ class four_russians_helpers:
     def restore_lcs_part(self, C, D, R, S, m, i1, j1):
         M = self.restore_matrix(C, D, R, S, m)
 
-        # print("M:")
-        # self.print_2dim_array(M)
-
         i = i1
         j = j1
 
         lcs = ""
 
         while i != 0 and j != 0:
-            # print("M["+str(i)+"]["+str(j)+"]")
-            # print(M[i][j])
-            # print("substitute")
-            # print(self.substitute_cost_function(C[i], D[j]) + M[i - 1][j - 1])
-            # print("delete")
-            # print(self.delete_cost_function(C[i]) + M[i - 1][j])
-            # print("insert")
-            # print(self.insert_cost_function(D[j]) + M[i][j - 1])
-
-            if M[i][j] == self.substitute_cost_function(C[i], D[j]) + M[i - 1][j - 1]:
-                if C[i] == D[j]:
+            if C[i] == D[j]:
+                if C[i] != '#':
                     lcs += C[i]
                 i = i - 1
                 j = j - 1
@@ -179,18 +175,6 @@ class four_russians_helpers:
                 i = i - 1
             elif M[i][j] == self.insert_cost_function(D[j]) + M[i][j - 1]:
                 j = j - 1
-            else:
-                # print("M[" + str(i) + "][" + str(j) + "]")
-                # print(M[i][j])
-                # print("substitute")
-                # print(self.substitute_cost_function(C[i], D[j]) + M[i - 1][j - 1])
-                # print("delete")
-                # print(self.delete_cost_function(C[i]) + M[i - 1][j])
-                # print("insert")
-                # print(self.insert_cost_function(D[j]) + M[i][j - 1])
-                # if i == 1: i = 0
-                # if j == 1: j = 0
-                pass
         return lcs, i, j
 
     def get_kth_substring(self, k, m, text_1):
@@ -200,80 +184,29 @@ class four_russians_helpers:
         lcs = ""
 
         # indices on the matrix of submatrices
-        I = int(len(text_1) / m)
-        J = int(len(text_2) / m)
+        I = int((len(text_1)-1) / m)
+        J = int((len(text_2)-1) / m)
 
         # indices inside of the submatrices
         i = m
         j = m
 
         while I != 0 and J != 0:
-            print("I", I)
-            print("J", J)
-
             C = '#'+self.get_kth_substring(I, m, text_1)
             D = '#'+self.get_kth_substring(J, m, text_2)
 
-            print("C: ", C)
-            print("D: ", D)
+            lcs_part, i, j = self.restore_lcs_part(C, D, [0]+P[I][J-1], [0]+Q[I-1][J], m, i, j)
 
-            lcs_part, i, j = self.restore_lcs_part(C, D, [0]+P[I][J], [0]+Q[I][J], m, i, j)
-
-            print("lcs_part: ",lcs_part)
-            print("i: ",i)
-            print("j: ",j)
-
-            if i == 0 and j == 0:
-                # prev_C = '#'+self.get_kth_substring(I - 1, m, text_1)
-                # prev_D = '#'+self.get_kth_substring(J - 1, m, text_2)
-                #
-                # upper_left_matrix = self.restore_matrix(prev_C, prev_D, [0]+P[I - 1][J - 1], [0]+Q[I - 1][J - 1], m)
-                #
-                # left_matrix_upper_initial = [upper_left_matrix[k][m - 1] for k in range(0, m)]
-                # left_matrix = self.restore_matrix(C, prev_D, [0]+P[I][J - 1], [0]+left_matrix_upper_initial, m)
-                #
-                # upper_matrix_left_initial = [upper_left_matrix[m - 1][k] for k in range(0, m)]
-                # upper_matrix = self.restore_matrix(prev_C, D, [0]+upper_matrix_left_initial, [0]+Q[I - 1][J], m)
-                #
-                # substitute_cost = self.substitute_cost_function(C[1], D[1]) + upper_left_matrix[m - 1][m - 1]
-                # delete_cost = self.delete_cost_function(C[1]) + upper_matrix[m - 1][0]
-                # insert_cost = self.insert_cost_function(D[1]) + left_matrix[0][m - 1]
-                #
-                # minimum = min(substitute_cost, delete_cost, insert_cost)
-                #
-                # if minimum == substitute_cost:
-                #     if C[1] == D[1]:
-                #         lcs += C[1]
-                #         print("C[i]:",C[1])
-                #     I = I - 1
-                #     J = J - 1
-                #     i = m
-                #     j = m
-                # elif minimum == delete_cost:
-                #     I = I - 1
-                #     i = m
-                # elif minimum == insert_cost:
-                #     J = J - 1
-                #     j = m
-
-                # if C[1] == D[1]:
-                #     lcs += C[1]
-                # print("C[i]:",C[1])
-                I = I - 1
-                J = J - 1
-                i = m
-                j = m
-            elif i == 1:
+            if i == 0:
                 I = I - 1
                 i = m
-            elif j == 1:
+            if j == 0:
                 J = J - 1
                 j = m
 
             lcs += lcs_part
 
         # reverse result:
-        print("lcs", lcs[::-1])
         return lcs[::-1]
 
     def get_edit_distance(self, m, text_1, text_2, storage):
@@ -281,15 +214,17 @@ class four_russians_helpers:
 
         cost = 0
 
-        for i in range(1, self.get_text_parts(m, text_1)):
+        for i in range(1, self.get_text_parts(m, text_1)+1):
             cost += sum(P[i][0])
 
-        for j in range(1, self.get_text_parts(m, text_2)):
+        for j in range(1, self.get_text_parts(m, text_2)+1):
             cost += sum(Q[int(len(text_1) / m)][j])
 
         return cost
 
     def get_lcs(self, m, text_1, text_2, storage):
+        if len(text_1) == 0 or len(text_2) == 0: return 0, ""
+
         P, Q = self.algorithm_z(m, storage, text_1, text_2)
         lcs = self.restore_lcs(text_1, text_2, P, Q, m)
         return lcs, len(lcs)
