@@ -207,7 +207,7 @@ class four_russians_helpers:
         i = m
         j = m
 
-        while I != 1 or J != 1:
+        while I != 0 and J != 0:
             print("I", I)
             print("J", J)
 
@@ -224,37 +224,45 @@ class four_russians_helpers:
             print("j: ",j)
 
             if i == 0 and j == 0:
-                prev_C = '#'+self.get_kth_substring(I - 1, m, text_1)
-                prev_D = '#'+self.get_kth_substring(J - 1, m, text_2)
+                # prev_C = '#'+self.get_kth_substring(I - 1, m, text_1)
+                # prev_D = '#'+self.get_kth_substring(J - 1, m, text_2)
+                #
+                # upper_left_matrix = self.restore_matrix(prev_C, prev_D, [0]+P[I - 1][J - 1], [0]+Q[I - 1][J - 1], m)
+                #
+                # left_matrix_upper_initial = [upper_left_matrix[k][m - 1] for k in range(0, m)]
+                # left_matrix = self.restore_matrix(C, prev_D, [0]+P[I][J - 1], [0]+left_matrix_upper_initial, m)
+                #
+                # upper_matrix_left_initial = [upper_left_matrix[m - 1][k] for k in range(0, m)]
+                # upper_matrix = self.restore_matrix(prev_C, D, [0]+upper_matrix_left_initial, [0]+Q[I - 1][J], m)
+                #
+                # substitute_cost = self.substitute_cost_function(C[1], D[1]) + upper_left_matrix[m - 1][m - 1]
+                # delete_cost = self.delete_cost_function(C[1]) + upper_matrix[m - 1][0]
+                # insert_cost = self.insert_cost_function(D[1]) + left_matrix[0][m - 1]
+                #
+                # minimum = min(substitute_cost, delete_cost, insert_cost)
+                #
+                # if minimum == substitute_cost:
+                #     if C[1] == D[1]:
+                #         lcs += C[1]
+                #         print("C[i]:",C[1])
+                #     I = I - 1
+                #     J = J - 1
+                #     i = m
+                #     j = m
+                # elif minimum == delete_cost:
+                #     I = I - 1
+                #     i = m
+                # elif minimum == insert_cost:
+                #     J = J - 1
+                #     j = m
 
-                upper_left_matrix = self.restore_matrix(prev_C, prev_D, [0]+P[I - 1][J - 1], [0]+Q[I - 1][J - 1], m)
-
-                left_matrix_upper_initial = [upper_left_matrix[k][m - 1] for k in range(0, m)]
-                left_matrix = self.restore_matrix(C, prev_D, [0]+P[I][J - 1], [0]+left_matrix_upper_initial, m)
-
-                upper_matrix_left_initial = [upper_left_matrix[m - 1][k] for k in range(0, m)]
-                upper_matrix = self.restore_matrix(prev_C, D, [0]+upper_matrix_left_initial, [0]+Q[I - 1][J], m)
-
-                substitute_cost = self.substitute_cost_function(C[1], D[1]) + upper_left_matrix[m - 1][m - 1]
-                delete_cost = self.delete_cost_function(C[1]) + upper_matrix[m - 1][0]
-                insert_cost = self.insert_cost_function(D[1]) + left_matrix[0][m - 1]
-
-                minimum = min(substitute_cost, delete_cost, insert_cost)
-
-                if minimum == substitute_cost:
-                    if C[1] == D[1]:
-                        lcs += C[1]
-                        print("C[i]:",C[1])
-                    I = I - 1
-                    J = J - 1
-                    i = m
-                    j = m
-                elif minimum == delete_cost:
-                    I = I - 1
-                    i = m
-                elif minimum == insert_cost:
-                    J = J - 1
-                    j = m
+                # if C[1] == D[1]:
+                #     lcs += C[1]
+                # print("C[i]:",C[1])
+                I = I - 1
+                J = J - 1
+                i = m
+                j = m
             elif i == 1:
                 I = I - 1
                 i = m
@@ -265,6 +273,7 @@ class four_russians_helpers:
             lcs += lcs_part
 
         # reverse result:
+        print("lcs", lcs[::-1])
         return lcs[::-1]
 
     def get_edit_distance(self, m, text_1, text_2, storage):
