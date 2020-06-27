@@ -7,15 +7,15 @@ class four_russians_helpers:
         self.insert_cost_function= insert_cost_function
         self.substitute_cost_function = substitute_cost_function
 
-    def prepare_parameters(self, text_1, text_2, delete_cost_function, insert_cost_function):
-        A = set(list(text_1[1:] + text_2[1:]))
+    def prepare_parameters(self, text_1, text_2):
+        A = sorted(list(set(list(text_1[1:] + text_2[1:]))))
 
-        def get_parameter(A):
-            return int(math.log2(len(A)))
+        def get_parameter(text_1):
+            return int(math.log2(len(text_1)-1))
 
         def get_step_size_bound():
-            I = max([insert_cost_function(letter_idx) for letter_idx in A])
-            D = max([delete_cost_function(letter_idx) for letter_idx in A])
+            I = max([self.insert_cost_function(letter_idx) for letter_idx in A])
+            D = max([self.delete_cost_function(letter_idx) for letter_idx in A])
             return max(I, D)
 
         m = get_parameter(text_1)
@@ -46,11 +46,8 @@ class four_russians_helpers:
         return result
 
     def store(self, R_new, S_new, C, D, R, S, storage):
-        C = C[1:]
-        D = D[1:]
-
-        R = tuple(R[1:])
-        S = tuple(S[1:])
+        R = tuple(R)
+        S = tuple(S)
 
         if C not in storage: storage[C] = {}
         if D not in storage[C]: storage[C][D] = {}
@@ -61,10 +58,14 @@ class four_russians_helpers:
     def fetch(self, C, D, R, S, storage):
         return storage[C][D][tuple(R)][tuple(S)]
 
+    def print_2dim_array(self, array):
+        for row in array:
+            print(row)
+
     def algorithm_y(self, m, A, step_size_bound):
         """ Preprocesses data by creating helper submatrices """
 
-        A.add('#')
+        A =['#']+ A
         strings = self.get_all_strings(m, A, '#')
 
         step_vectors_alphabet = [[cost] for cost in range(-step_size_bound,step_size_bound+1)]
@@ -76,8 +77,8 @@ class four_russians_helpers:
             for D in strings:
                 for R in step_vectors:
                     for S in step_vectors:
-                        T = [[0]*(m+1) for _ in range(m+1)]
-                        U = [[0]*(m+1) for _ in range(m+1)]
+                        T = [[-111]*(m+1) for _ in range(m+1)]
+                        U = [[-999]*(m+1) for _ in range(m+1)]
 
                         for i in range(1, m+1):
                             T[i][0] = R[i]
@@ -102,7 +103,7 @@ class four_russians_helpers:
                             R_new.append(T[i][m])
                             S_new.append(U[m][i])
 
-                        self.store(R_new, S_new, C, D, R, S, storage)
+                        self.store(R_new, S_new, C[1:], D[1:], R[1:], S[1:], storage)
 
         return storage
 

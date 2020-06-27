@@ -46,7 +46,7 @@ def edit_distance_four_russians(text_1, text_2, delete_cost_function, insert_cos
     """ Algorithm proposed by William J. Masek and Michael S. Paterson, using the method of "Four Russians """
 
     fr = four_russians_helpers(delete_cost_function, insert_cost_function, substitute_cost_function)
-    m, A, step_size_bound, text_1, text_2 = fr.prepare_parameters(text_1, text_2, delete_cost_function, insert_cost_function)
+    m, A, step_size_bound, text_1, text_2 = fr.prepare_parameters(text_1, text_2)
     storage = fr.algorithm_y(m, A, step_size_bound)
     cost = fr.get_edit_distance(m, text_1, text_2, storage)
     return cost
