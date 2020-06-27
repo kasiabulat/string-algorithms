@@ -77,8 +77,8 @@ class four_russians_helpers:
             for D in strings:
                 for R in step_vectors:
                     for S in step_vectors:
-                        T = [[-111]*(m+1) for _ in range(m+1)]
-                        U = [[-999]*(m+1) for _ in range(m+1)]
+                        T = [[0]*(m+1) for _ in range(m+1)]
+                        U = [[0]*(m+1) for _ in range(m+1)]
 
                         for i in range(1, m+1):
                             T[i][0] = R[i]
