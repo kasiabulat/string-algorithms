@@ -1,13 +1,14 @@
 from collections import namedtuple
 
 from approximate_string_matching import distance
-from approximate_string_matching.four_russians_helpers import four_russians_helpers, lcs_delete_cost_function, \
+from approximate_string_matching.four_russians_helpers import \
+  FourRussiansHelpers, lcs_delete_cost_function, \
   lcs_insert_cost_function, lcs_substitute_cost_function
 
 
 def needleman_wunsch(text_1, text_2, n_1, n_2):
   Data = namedtuple('Data', ['distance', 'previous', 'letter'])
-  d = { (0, 0): Data(0, None, '') }
+  d = {(0, 0): Data(0, None, '')}
   for i, ci in enumerate(text_1[1:]):
     d[(i + 1, 0)] = Data(i + 1, (i, 0), ci)
   for i, ci in enumerate(text_2[1:]):
@@ -31,6 +32,7 @@ def needleman_wunsch(text_1, text_2, n_1, n_2):
       text = d[p].letter + text
     p = d[p].previous
   return text, d[(n_1, n_2)].distance
+
 
 def hirschberg(text_1, text_2, n_1, n_2):
   if n_1 < n_2:
@@ -56,10 +58,14 @@ def hirschberg(text_1, text_2, n_1, n_2):
   return out_previous[0] + out_next[0], out_previous[1] + out_next[1]
 
 
-def four_russians(text_1, text_2, n1, n2):
-  """ Calculates longest common subsequence of strings A and B as a special case of four russians edit distance algorithm """
+def four_russians(text_1, text_2):
+  """ Calculates longest common subsequence of strings A and B
+  as a special case of four russians edit distance algorithm """
 
-  fr = four_russians_helpers(lcs_delete_cost_function, lcs_insert_cost_function, lcs_substitute_cost_function)
+  fr = FourRussiansHelpers(
+      lcs_delete_cost_function,
+      lcs_insert_cost_function,
+      lcs_substitute_cost_function)
   m, A, step_size_bound, text_1, text_2 = fr.prepare_parameters(text_1, text_2)
   storage = fr.algorithm_y(m, A, step_size_bound)
   lcs, length = fr.get_lcs(m, text_1, text_2, storage)
