@@ -6,6 +6,11 @@ from approximate_string_matching.four_russians_helpers import four_russians_help
 lcs_delete_cost_function = lambda a: 1
 lcs_insert_cost_function = lambda b: 1
 lcs_substitute_cost_function = lambda a, b: 0 if (a == b) else 2
+def substitute_cost_function2(c, d):
+    if c == 'a' and d == 'a': return 0
+    if c == 'b' and d == 'b': return 0
+    if c == 'a' and d == 'b': return 1
+    return 2
 
 class TestPrepareParameters(unittest.TestCase):
     def check_prepare_parameters(self, fr, t_1, t_2, expected_m, expected_A, expected_t_1, expected_t_2):
@@ -49,6 +54,20 @@ class TestStorage(unittest.TestCase):
         self.check_storage(fr, [0, -1], [1, 11], "ababa", "ba", [1, 1], [1, -1], storage)
         self.check_storage(fr, [0, -1], [1, 0], "ab", "ba", [0, 1], [0, -1], storage)
 
+class TestRestoreMatrix(unittest.TestCase):
+    def test_restore_matrix(self):
+        fr = four_russians_helpers(lcs_delete_cost_function, lcs_insert_cost_function, substitute_cost_function2)
+        restored_matrix = fr.restore_matrix("#baabab", "#ababaa", [0, 1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6], 6)
+        expected_matrix = [ [0, 1, 2, 3, 4, 5, 6],
+                            [1, 2, 1, 2, 3, 4, 5],
+                            [2, 1, 2, 1, 2, 3, 4],
+                            [3, 2, 2, 2, 2, 2, 3],
+                            [4, 3, 2, 3, 2, 3, 4],
+                            [5, 4, 3, 2, 3, 2, 3],
+                            [6, 5, 4, 3, 2, 3, 4]]
+
+        self.assertEqual(restored_matrix, expected_matrix)
+
 def get_full_matrices(fr, text_1, text_2, D, I):
     n = len(text_1)
 
@@ -74,12 +93,6 @@ def get_full_matrices(fr, text_1, text_2, D, I):
             diff_between_columns[i][j] = whole_matrix[i][j] - whole_matrix[i][j - 1]
 
     return whole_matrix, diff_between_rows, diff_between_columns
-
-def substitute_cost_function2(c, d):
-    if c == 'a' and d == 'a': return 0
-    if c == 'b' and d == 'b': return 0
-    if c == 'a' and d == 'b': return 1
-    return 2
 
 class TestAlgorithmY(unittest.TestCase):
     def test_algorithm_y(self):
@@ -122,3 +135,15 @@ class TestAlgorithmZ(unittest.TestCase):
             for j in range(1, 4):
                 self.assertEqual(P[i][j], [diff_between_rows[(i-1)*m+1][j*m], diff_between_rows[i*m][j*m]])
                 self.assertEqual(Q[i][j], [diff_between_columns[i*m][(j-1)*m+1], diff_between_columns[i*m][j*m]])
+
+class TestEditDistance(unittest.TestCase):
+    def test_edit_distance(self):
+        text_1 = "#baabab"
+        text_2 = "#ababaa"
+
+        fr = four_russians_helpers(lcs_delete_cost_function, lcs_insert_cost_function, substitute_cost_function2)
+        m, A, step_size_bound, t_1, t_2 = fr.prepare_parameters(text_1, text_2)
+        storage = fr.algorithm_y(m, A, step_size_bound)
+        edit_distance = fr.get_edit_distance(m, text_1, text_2, storage)
+
+        self.assertEqual(edit_distance, 4)
